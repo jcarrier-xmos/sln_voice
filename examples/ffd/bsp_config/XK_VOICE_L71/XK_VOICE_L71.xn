@@ -45,6 +45,8 @@
           </Tile>
           <Tile Number="1" Reference="tile[1]">
 
+            <Port Location="XS1_PORT_4A"  Name="PORT_LOW_PWR_CTRL"/>
+
             <!-- MIC related ports -->
             <Port Location="XS1_PORT_1G"  Name="PORT_PDM_CLK"/>
             <Port Location="XS1_PORT_1F"  Name="PORT_PDM_DATA"/>

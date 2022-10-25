@@ -17,7 +17,7 @@
 #include "rtos_printf.h"
 
 /* App headers */
-#include "app_conf.h"
+#include "platform/platform_conf.h"
 #include "platform/platform_init.h"
 #include "platform/driver_instances.h"
 #include "audio_pipeline/audio_pipeline.h"
@@ -29,6 +29,8 @@
 #include "xcore_device_memory.h"
 #include "ssd1306_rtos_support.h"
 #include "intent_handler/intent_handler.h"
+
+#include "power_control.h"
 
 extern void startup_task(void *arg);
 extern void tile_common_init(chanend_t c);
@@ -74,7 +76,9 @@ int audio_pipeline_output(void *output_app_data,
     (void) output_app_data;
 
 #if appconfINFERENCE_ENABLED
-    inference_engine_sample_push((int32_t *)output_audio_frames, frame_count);
+    if (power_control_status() == POWER_STATE_FULL) {
+        inference_engine_sample_push((int32_t *)output_audio_frames, frame_count);
+    }
 #endif
 
     return AUDIO_PIPELINE_FREE_FRAME;
@@ -127,6 +131,8 @@ void startup_task(void *arg)
 #if ON_TILE(0)
     led_task_create(appconfLED_TASK_PRIORITY, NULL);
 #endif
+
+    power_control_task_create(appconfPOWER_CONTROL_TASK_PRIORITY, NULL);
 
     vTaskSuspend(NULL);
     while(1){;} /* Trap */

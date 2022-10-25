@@ -10,6 +10,8 @@
 #define appconfGPIO_T1_RPC_PORT                   2
 #define appconfINTENT_MODEL_RUNNER_SAMPLES_PORT   3
 #define appconfI2C_MASTER_RPC_PORT                4
+#define appconfCLOCK_CONTROL_PORT                 14
+#define appconfPOWER_CONTROL_PORT                 15
 
 #define appconfWANSON_READY_SYNC_PORT             16
 
@@ -151,6 +153,8 @@
 #define appconfINFERENCE_MODEL_RUNNER_TASK_PRIORITY (configMAX_PRIORITIES - 2)
 #define appconfINFERENCE_HMI_TASK_PRIORITY          (configMAX_PRIORITIES / 2)
 #define appconfGPIO_RPC_PRIORITY                    (configMAX_PRIORITIES / 2)
+#define appconfCLOCK_CONTROL_RPC_HOST_PRIORITY      (configMAX_PRIORITIES / 2)
+#define appconfPOWER_CONTROL_TASK_PRIORITY          (configMAX_PRIORITIES / 2)
 #define appconfGPIO_TASK_PRIORITY                   (configMAX_PRIORITIES / 2 + 2)
 #define appconfI2C_TASK_PRIORITY                    (configMAX_PRIORITIES / 2 + 2)
 #define appconfI2C_MASTER_RPC_PRIORITY              (configMAX_PRIORITIES / 2)
