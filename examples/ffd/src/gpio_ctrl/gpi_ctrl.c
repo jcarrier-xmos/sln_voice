@@ -54,7 +54,7 @@ static void gpio_handler(rtos_gpio_t *gpio_ctx)
                 &value,          /* Pass out notification value into value */
                 portMAX_DELAY ); /* Wait indefinitely until next notification */
 
-        gpio_val = rtos_gpio_port_in(gpio_ctx, gpio_port);
+        gpio_val = rtos_gpio_port_in(gpio_ctx, gpio_port); // TODO: This seems unnecessary, the "value" above already contains the value that was captured.
         gpio_gpi_toggled_cb(gpio_val);
     }
 }
