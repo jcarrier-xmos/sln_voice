@@ -119,7 +119,7 @@ void wanson_engine_task(void *args)
             /* Perform inference here */
             ret = Wanson_ASR_Recog(buf_short, WANSON_SAMPLES_PER_INFERENCE, (const char **)&text_ptr, &id);
 
-            if (ret) {
+            if (ret == 1) {
     #if appconfINFERENCE_RAW_OUTPUT
                 wanson_engine_proc_keyword_result((const char **)&text_ptr, id);
     #else
@@ -146,8 +146,10 @@ void wanson_engine_task(void *args)
                     // remain in STATE_PROCESSING_COMMAND state
                 }
     #endif
+            } else if (ret < 0) {
+                rtos_printf("Wanson error ret: %d\n", ret);
             }
-    
+
             buf_short_index = 0; // reset the offest into the buffer of int16s.  
                                  // Note, we do not need to overlap the window of samples.
                                  // This is handled in the Wanson ASR engine.

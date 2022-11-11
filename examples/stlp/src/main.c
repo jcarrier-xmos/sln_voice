@@ -320,7 +320,7 @@ void startup_task(void *arg)
 {
     rtos_printf("Startup task running from tile %d on core %d\n", THIS_XCORE_TILE, portGET_CORE_ID());
 
-    platform_start();
+    platform_start(*(chanend_t*)arg);
 
 #if ON_TILE(1) && appconfI2S_ENABLED && (appconfI2S_MODE == appconfI2S_MODE_SLAVE)
     xTaskCreate((TaskFunction_t) i2s_slave_intertile,
@@ -360,7 +360,7 @@ void vApplicationMinimalIdleHook(void)
 static void tile_common_init(chanend_t c)
 {
     platform_init(c);
-    chanend_free(c);
+    //chanend_free(c);
 
 #if appconfUSB_ENABLED && ON_TILE(USB_TILE_NO)
     usb_audio_init(intertile_ctx, appconfUSB_AUDIO_TASK_PRIORITY);
@@ -369,7 +369,7 @@ static void tile_common_init(chanend_t c)
     xTaskCreate((TaskFunction_t) startup_task,
                 "startup_task",
                 RTOS_THREAD_STACK_SIZE(startup_task),
-                NULL,
+                &c,
                 appconfSTARTUP_TASK_PRIORITY,
                 NULL);
 

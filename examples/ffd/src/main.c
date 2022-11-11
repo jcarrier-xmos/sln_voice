@@ -91,12 +91,20 @@ void vApplicationMallocFailedHook(void)
     for(;;);
 }
 
+#if ON_TILE(1)
+TimerHandle_t lp_on_start_tmr;
+static void tmr_callback(TimerHandle_t pxTimer)
+{
+    power_control_enter_low_power();
+}
+#endif
+
 __attribute__((weak))
 void startup_task(void *arg)
 {
     rtos_printf("Startup task running from tile %d on core %d\n", THIS_XCORE_TILE, portGET_CORE_ID());
 
-    platform_start();
+    platform_start(*(chanend_t*)arg);
 
 #if ON_TILE(1)
     gpio_gpi_init(gpio_ctx_t0);
@@ -134,6 +142,14 @@ void startup_task(void *arg)
 
     power_control_task_create(appconfPOWER_CONTROL_TASK_PRIORITY, NULL);
 
+#if ON_TILE(1)
+    // TODO: just for startup testing.
+    lp_on_start_tmr = xTimerCreate("lp_on_start_tmr",
+                                   pdMS_TO_TICKS(4000),
+                                   pdFALSE, NULL, tmr_callback);
+    xTimerStart(lp_on_start_tmr, 0);
+#endif
+
     vTaskSuspend(NULL);
     while(1){;} /* Trap */
 }
@@ -148,12 +164,12 @@ __attribute__((weak))
 void tile_common_init(chanend_t c)
 {
     platform_init(c);
-    chanend_free(c);
+    //chanend_free(c);
 
     xTaskCreate((TaskFunction_t) startup_task,
                 "startup_task",
                 RTOS_THREAD_STACK_SIZE(startup_task),
-                NULL,
+                &c,
                 appconfSTARTUP_TASK_PRIORITY,
                 NULL);
 

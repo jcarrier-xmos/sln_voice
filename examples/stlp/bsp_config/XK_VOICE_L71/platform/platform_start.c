@@ -139,17 +139,54 @@ static void usb_start(void)
 #endif
 }
 
-void platform_start(void)
+#if (ON_TILE(0))
+#define SYNC()    do {chan_out_byte(other_tile_c, 0xA5); (void) chan_in_byte(other_tile_c);} while(0)
+#else
+#define SYNC()   do {(void) chan_in_byte(other_tile_c); chan_out_byte(other_tile_c, 0xA5);} while(0)
+#endif
+
+void platform_start(chanend_t other_tile_c)
 {
+    SYNC();
+    debug_printf("rtos_intertile_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     rtos_intertile_start(intertile_ctx);
 
+    SYNC();
+    debug_printf("gpio_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     gpio_start();
+
+    SYNC();
+    debug_printf("flash_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     flash_start();
+
+    SYNC();
+    debug_printf("i2c_master_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     i2c_master_start();
+
+    SYNC();
+    debug_printf("i2c_slave_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     i2c_slave_start();
+
+    SYNC();
+    debug_printf("audio_codec_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     audio_codec_start();
+
+    SYNC();
+    debug_printf("spi_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     spi_start();
+
+    SYNC();
+    debug_printf("mics_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     mics_start();
+
+    SYNC();
+    debug_printf("i2s_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     i2s_start();
+
+    SYNC();
+    debug_printf("usb_start (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
     usb_start();
+
+    SYNC();
+    debug_printf("Startup done! (tile %d on core %d)\n", THIS_XCORE_TILE, portGET_CORE_ID());
 }

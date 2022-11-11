@@ -7,6 +7,6 @@
 #include <xcore/chanend.h>
 
 void platform_init(chanend_t other_tile_c);
-void platform_start(void);
+void platform_start(chanend_t other_tile_c);
 
 #endif /* PLATFORM_INIT_H_ */
