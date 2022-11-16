@@ -143,6 +143,12 @@ void startup_task(void *arg)
     power_control_task_create(appconfPOWER_CONTROL_TASK_PRIORITY, NULL);
 
 #if ON_TILE(1)
+    set_local_tile_processor_clk_div(1);
+    enable_local_tile_processor_clock_divider();
+    set_local_tile_processor_clk_div(4);
+#endif
+
+#if ON_TILE(1)
     // TODO: just for startup testing.
     lp_on_start_tmr = xTimerCreate("lp_on_start_tmr",
                                    pdMS_TO_TICKS(4000),

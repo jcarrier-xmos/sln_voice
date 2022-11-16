@@ -38,10 +38,15 @@
 static TaskHandle_t ctx_power_control_task = NULL;
 static power_state_t requested_power_state = POWER_STATE_FULL;
 
+// Enable/disable scaling of switch clock frequency when entering low power mode.
+#define appconfLOW_POWER_ENABLE_SWITCH_CONTROL 1
+#define appconfLOW_POWER_SWITCH_CLOCK_DIVIDER  30
+#define appconfLOW_POWER_TILE0_CLOCK_DIVIDER   600
+
 #if ON_TILE(1)
 
-const unsigned max_clk_div_tile0 = 600;
 static unsigned tile0_div;
+static unsigned switch_div;
 
 #endif
 
@@ -108,12 +113,26 @@ static void tile0_low_power_clocks_enable(void)
 {
     // Save tile 0 clock config before apply low power configuration.
     tile0_div = rtos_clock_control_get_processor_clk_div(cc_ctx_t0);
-    rtos_clock_control_set_processor_clk_div(cc_ctx_t0, max_clk_div_tile0);
+    rtos_clock_control_set_processor_clk_div(cc_ctx_t0, appconfLOW_POWER_TILE0_CLOCK_DIVIDER);
+
+#if (appconfLOW_POWER_ENABLE_SWITCH_CONTROL)
+    switch_div = rtos_clock_control_get_switch_clk_div(cc_ctx_t0);
+    //rtos_printf("- Switch: %d MHz\n", get_local_switch_clock(), get_local_node_switch_clk_div());
+    //debug_printf("- Switch Div0: %d.\n", switch_div);
+    //debug_printf("- Switch Div0: %d.\n", get_node_switch_clk_div(TILE_ID(0)));
+    //debug_printf("- Switch Div1: %d.\n", get_node_switch_clk_div(get_local_tile_id()));
+    rtos_clock_control_set_switch_clk_div(cc_ctx_t0, appconfLOW_POWER_SWITCH_CLOCK_DIVIDER);
+    //debug_printf("- Switch Div0: %d.\n", get_node_switch_clk_div(TILE_ID(0)));
+    //debug_printf("- Switch Div1: %d.\n", get_node_switch_clk_div(get_local_tile_id()));
+#endif
 }
 
 static void tile0_low_power_clocks_disable(void)
 {
-    // Restore the original tile 0 clock state.
+    // Restore the original clock divider state(s).
+#if (appconfLOW_POWER_ENABLE_SWITCH_CONTROL)
+    set_node_switch_clk_div(TILE_ID(0), switch_div);
+#endif
     set_tile_processor_clk_div(TILE_ID(0), tile0_div);
 }
 
