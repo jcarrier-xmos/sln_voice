@@ -50,13 +50,30 @@ void power_state_init() {
     xTimerStart(power_state_timer, 0);
 }
 
+// NOTE: Printing here increases the risk of an exception during pdm_rx_isr()
+#define PRINT_VNR_STATS 1
+
+#if PRINT_VNR_STATS
+static uint32_t total_frame_count = 0;
+#endif
+
 power_state_t power_state_data_add(power_data_t *data) {
+#if PRINT_VNR_STATS
+    total_frame_count++;
+#endif
     if ((data->ema_energy >= appconfPOWER_HIGH_ENERGY_THRESHOLD) ||
         ((data->ema_energy >= appconfPOWER_LOW_ENERGY_THRESHOLD) &&
          (data->vnr_pred >= appconfPOWER_VNR_THRESHOLD))) {
             power_state_set(POWER_STATE_FULL);
             power_state_time_expired = 0;
+#if PRINT_VNR_STATS
+            rtos_printf("+ [ %08d ] EMA Energy (x1000): %d, VNR Pred: %d %%\n", total_frame_count, (int)(data->ema_energy * 1000), (int)(data->vnr_pred * 100));
+#endif
             xTimerReset(power_state_timer, 0);
+#if PRINT_VNR_STATS
+    } else if (data->ema_energy >= (0.005f)) {
+        rtos_printf("- [ %08d ] EMA Energy (x1000): %d, VNR Pred: %d %%\n", total_frame_count, (int)(data->ema_energy * 1000), (int)(data->vnr_pred * 100));
+#endif
     }
 
     return power_state;

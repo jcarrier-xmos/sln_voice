@@ -178,6 +178,7 @@ static uint8_t low_power_response(void)
                            sizeof(full_pwr_time_expired));
 
     if (full_pwr_time_expired == 0) {
+        debug_printf("LP_NAK\n");
         // Timer has not expired, NAK the request to continue in full power.
         inference_engine_full_power_request();
     } else {

@@ -111,6 +111,10 @@ static void timeout_event_handler(TimerHandle_t pxTimer)
 {
     if (timeout_event & TIMEOUT_EVENT_INTENT) {
         timeout_event &= ~TIMEOUT_EVENT_INTENT;
+        // TODO: ON loss of intent:
+        // - If Tile 1 reports timeout on appconfPOWER_FULL_HOLD_DURATION, transition immediately to low power.
+        // - Otherwise transition to STATE_EXPECTING_WAKEWORD
+        rtos_printf("INTENT_TMO\n");
         // Playback "stop listening for command" sound (50)
         wanson_engine_proc_keyword_result(NULL, 50);
         led_indicate_waiting();
@@ -126,9 +130,11 @@ static void timeout_event_handler(TimerHandle_t pxTimer)
         /* Determine if the tile should request low power or extend full power
          * operation based on whether there are more keywords to process. */
         if (inference_engine_low_power_ready()) {
+            rtos_printf("FP_TMO\n");
             inference_power_state = STATE_REQUESTING_LOW_POWER;
             power_control_req_low_power();
         } else {
+            rtos_printf("FP_HOLD\n");
             hold_full_power(pxTimer);
         }
 #endif
@@ -152,10 +158,12 @@ static void proc_keyword_wait_for_completion(void)
     uint32_t notif_value;
 
     if (inference_engine_keyword_queue_count()) {
+        rtos_printf("Wait");
         xTaskNotifyWait(bits_to_clear_on_entry,
                         bits_to_clear_on_exit,
                         &notif_value,
                         portMAX_DELAY);
+        rtos_printf(".\n");
     }
 }
 
@@ -213,6 +221,8 @@ static uint8_t low_power_handler(TimerHandle_t pxTimer, int32_t *buf,
 
 void wanson_engine_full_power_request(void)
 {
+    // TODO: maybe this function should take an argument for which timer value too use.
+    // If extending full power, the timer might be short; if exiting low power, the timer might be slightly longer to accommodate wake word detection.
     requested_full_power = 1;
 }
 
@@ -290,6 +300,7 @@ void wanson_engine_task(void *args)
     #if appconfLOW_POWER_ENABLED
         if (low_power_handler(inf_eng_tmr, buf, buf_short, &buf_short_index)) {
             // Low power, processing stopped.
+            // TODO: maybe consider using a notification event.
             continue;
         }
     #endif
