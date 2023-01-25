@@ -3,32 +3,25 @@
 
 /* System headers */
 #include <xcore/assert.h>
+#include <xs3a_defines.h>
 
 /* App headers */
-#include "ff.h"
+#include "app_conf.h"
+//#include "platform_conf.h"
+#include "platform/driver_instances.h"
 #include "xcore_device_memory.h"
 
-static FIL model_file;
-
-size_t model_file_init() 
+size_t model_file_init()
 {
-    FRESULT result;
-    
-    result = f_open(&model_file, "model.bin", FA_READ);
-    if (result == FR_OK) {
-        return f_size(&model_file);
-    }
-    return 0;
+    return 1;
 }
 
 size_t model_data_load(void *dest, const void *src, size_t size)
 {
     xassert(IS_SWMEM(src));
-    
-    size_t bytes_read;
 
-    f_lseek(&model_file, (FSIZE_t)src - (FSIZE_t)XS1_SWMEM_BASE);
-    f_read(&model_file, dest, size, &bytes_read);
-    
-    return bytes_read;
+    unsigned int offset = (unsigned int)src - XS1_SWMEM_BASE;
+    rtos_qspi_flash_read(qspi_flash_ctx, dest, QSPI_FLASH_MODEL_START_ADDRESS + offset, size);
+
+    return size;
 }

@@ -4,6 +4,20 @@
 #ifndef APP_CONF_H_
 #define APP_CONF_H_
 
+#ifndef QSPI_FLASH_FILESYSTEM_START_ADDRESS
+#define QSPI_FLASH_FILESYSTEM_START_ADDRESS 0x100000
+#endif
+
+#ifndef QSPI_FLASH_FILESYSTEM_SIZE
+// Assume the filesystem to be no greater than 2MB
+#define QSPI_FLASH_FILESYSTEM_SIZE 0x200000
+#endif
+
+#ifndef QSPI_FLASH_MODEL_START_ADDRESS
+// The model(s) will be placed immediately following the filesystem.
+#define QSPI_FLASH_MODEL_START_ADDRESS QSPI_FLASH_FILESYSTEM_START_ADDRESS + QSPI_FLASH_FILESYSTEM_SIZE
+#endif
+
 /* Intertile port settings */
 #define appconfUSB_AUDIO_PORT                     0
 #define appconfGPIO_T0_RPC_PORT                   1

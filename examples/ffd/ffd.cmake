@@ -95,20 +95,37 @@ add_custom_command(
     OUTPUT example_ffd_model.bin
     COMMAND xobjdump --strip example_ffd.xe
     COMMAND xobjdump --split example_ffd.xb
-    COMMAND ${CMAKE_COMMAND} -E copy image_n0c0.swmem ${CMAKE_CURRENT_LIST_DIR}/filesystem_support/model.bin
+    COMMAND ${CMAKE_COMMAND} -E copy image_n0c0.swmem ${CMAKE_CURRENT_BINARY_DIR}/example_ffd_model.bin
     DEPENDS example_ffd
     COMMENT
         "Extract swmem"
     VERBATIM
 )
 
+# TODO: consider moving "example_ffd_fat.fs" to ${CMAKE_CURRENT_BINARY_DIR}/example_ffd_fat.fs. This would aid in repo cleanup.
 add_custom_command(
     OUTPUT example_ffd_fat.fs
     COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_CURRENT_LIST_DIR}/filesystem_support/example_ffd_fat.fs
     COMMAND fatfs_mkimage --input=${CMAKE_CURRENT_LIST_DIR}/filesystem_support --image_size=2097152 --output=example_ffd_fat.fs
-    DEPENDS example_ffd_model.bin
     COMMENT
         "Create filesystem"
+    WORKING_DIRECTORY
+        ${CMAKE_CURRENT_LIST_DIR}/filesystem_support
+    VERBATIM
+)
+
+add_custom_command(
+    OUTPUT example_ffd_data.bin
+    COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_CURRENT_LIST_DIR}/filesystem_support/example_ffd_data.bin
+    COMMAND datapartition_mkimage -b 1024 -i example_ffd_fat.fs:0 "${CMAKE_CURRENT_BINARY_DIR}/example_ffd_model.bin:2048" -o example_ffd_data.bin
+    # TODO: combine the fatfs and model.bin into a single data partition. Additional metadata for the model.bin might include, start-offset, size, and checksum.
+    # cat fat.fs | dd of=image_n0c1.swmem bs=1 seek=1048576 conv=notrunc
+    # FATFS must start at: QSPI_FLASH_FILESYSTEM_START_ADDRESS (currently set to: 0x100000)
+    DEPENDS
+        example_ffd_model.bin
+        example_ffd_fat.fs
+    COMMENT
+        "Create data partition"
     WORKING_DIRECTORY
         ${CMAKE_CURRENT_LIST_DIR}/filesystem_support
     VERBATIM
