@@ -110,3 +110,18 @@ int32_t intent_engine_sample_push(asr_sample_t *buf, size_t frames)
 }
 
 #endif /* ON_TILE(ASR_TILE_NO) */
+
+void intent_engine_ready_sync(void)
+{
+    int sync = 1;
+#if ON_TILE(AUDIO_PIPELINE_TILE_NO)
+    /* Wait until the intent engine is initialized before starting the
+     * audio pipeline. */
+    size_t len = rtos_intertile_rx_len(intertile_ctx, appconfINTENT_ENGINE_READY_SYNC_PORT, RTOS_OSAL_WAIT_FOREVER);
+    xassert(len == sizeof(sync));
+    rtos_intertile_rx_data(intertile_ctx, &sync, sizeof(sync));
+#else
+    /* Alert other tile to start the audio pipeline */
+    rtos_intertile_tx(intertile_ctx, appconfINTENT_ENGINE_READY_SYNC_PORT, &sync, sizeof(sync));
+#endif
+}

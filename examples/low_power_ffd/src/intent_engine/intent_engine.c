@@ -228,9 +228,8 @@ void intent_engine_task(void *args)
     asr_reset(asr_ctx);
     led_indicate_idle();
 
-    /* Alert other tile to start the audio pipeline */
+    intent_engine_ready_sync();
     int run_asr = 1;
-    rtos_intertile_tx(intertile_ctx, appconfINTENT_ENGINE_READY_SYNC_PORT, &run_asr, sizeof(run_asr));
 
     while (1)
     {
