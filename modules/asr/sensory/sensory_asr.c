@@ -111,6 +111,14 @@ asr_port_t asr_init(int32_t *model, int32_t *grammar, devmem_manager_t *devmem)
     return (asr_port_t) &sensory_asr;
 }
 
+#ifndef TEST_END_OF_EVAL
+#define TEST_END_OF_EVAL    0
+#endif
+
+#if TEST_END_OF_EVAL
+static unsigned test = 0;
+#endif
+
 asr_error_t asr_process(asr_port_t *ctx, int16_t *audio_buf, size_t buf_len)
 {
     xassert(ctx);
@@ -120,6 +128,12 @@ asr_error_t asr_process(asr_port_t *ctx, int16_t *audio_buf, size_t buf_len)
     appStruct_T *app = &(sensory_asr->app);
     t2siStruct *t = &(app->_t);
     errors_t error;
+
+#if TEST_END_OF_EVAL
+    if (test >= 10) {
+        return ASR_EVALUATION_EXPIRED;
+    }
+#endif
 
     sensory_asr->brick_count++;
     sensory_asr->word_id = -1;
@@ -138,6 +152,10 @@ asr_error_t asr_process(asr_port_t *ctx, int16_t *audio_buf, size_t buf_len)
     if (error == ERR_OK) {
         if (t->wordID) {
             AUDIOINDEX epIndex, stIndex, tailCount, startBackupFrames, endBackupFrames;
+
+#if TEST_END_OF_EVAL
+            test++;
+#endif
 
             asr_printf("Sensory Recognizer found wordID=%d  score=%d\n", t->wordID, t->finalScore);
             // if (t->svScore >= 0) asr_printf("svscore= %d", t->svScore);

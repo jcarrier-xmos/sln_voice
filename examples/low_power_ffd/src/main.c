@@ -37,8 +37,41 @@
 #define MEM_ANALYSIS_ENABLED 1
 #endif
 
+// Prevent other tasks from being placed on appconfPDM_MIC_INTERRUPT_CORE
+#define NO_PREEMPT_TASK_ENABLED 1
+
 void startup_task(void *arg);
 void tile_common_init(chanend_t c);
+
+#if ON_TILE(MICARRAY_TILE_NO)
+
+#if NO_PREEMPT_TASK_ENABLED
+static void no_preempt_task(void *arg)
+{
+    vTaskPreemptionDisable(NULL);
+
+    while(1) {
+        asm volatile("waiteu");
+    }
+}
+
+static void no_preempt_task_create(void)
+{
+    static TaskHandle_t task_handle;
+    xTaskCreate((TaskFunction_t)no_preempt_task,
+            "no_preempt_task",
+            RTOS_THREAD_STACK_SIZE(no_preempt_task),
+            NULL,
+            (configMAX_PRIORITIES - 1),
+            &task_handle);
+
+    //rtos_osal_thread_core_exclusion_set
+
+    UBaseType_t uxCoreAffinityMask = 1 << appconfPDM_MIC_INTERRUPT_CORE;
+    vTaskCoreAffinitySet(task_handle, uxCoreAffinityMask);
+}
+#endif
+#endif
 
 __attribute__((weak))
 void audio_pipeline_input(void *input_app_data,
@@ -141,7 +174,11 @@ void startup_task(void *arg)
     rtos_printf("Startup task running from tile %d on core %d\n", THIS_XCORE_TILE, portGET_CORE_ID());
 
     platform_start();
-
+#if ON_TILE(MICARRAY_TILE_NO)
+#if NO_PREEMPT_TASK_ENABLED
+    no_preempt_task_create();
+#endif
+#endif
 #if ON_TILE(0)
     // Setup flash low-level mode
     //   NOTE: must call rtos_qspi_flash_fast_read_shutdown_ll to use non low-level mode calls

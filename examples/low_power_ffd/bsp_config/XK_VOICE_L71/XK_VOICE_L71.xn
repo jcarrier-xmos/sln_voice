@@ -56,6 +56,9 @@
             <Port Location="XS1_PORT_1A"  Name="I2S_MIC_DATA"/>
             <Port Location="XS1_PORT_1K"  Name="I2S_DATA_IN"/>
 
+            <!-- Test pad for user-defined testing -->
+            <Port Location="XS1_PORT_4A"  Name="PORT_TEST_PAD"/>
+
             <!-- Used for looping back clocks -->
             <Port Location="XS1_PORT_1N"  Name="PORT_NOT_IN_PACKAGE_1"/>
           </Tile>
