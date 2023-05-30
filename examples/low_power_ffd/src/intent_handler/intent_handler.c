@@ -18,10 +18,38 @@
 #include "intent_handler/intent_handler.h"
 #include "intent_engine/intent_engine.h"
 
+#include "ssd1306_rtos_support.h"
+
 #define WAKEUP_LOW  (appconfINTENT_WAKEUP_EDGE_TYPE)
 #define WAKEUP_HIGH (appconfINTENT_WAKEUP_EDGE_TYPE == 0)
 
+#ifndef USE_SSD1306_DISPLAY
+#define USE_SSD1306_DISPLAY 0
+#endif
+
 #if ON_TILE(ASR_TILE_NO)
+
+#if USE_SSD1306_DISPLAY
+static char *asr_lut[] = {
+    "",
+    "TV: ON",
+    "CH++",
+    "CH--",
+    "VOL++",
+    "VOL--",
+    "TV: OFF",
+    "Lights: ON",
+    "Brightness++",
+    "Brightness--",
+    "Lights: OFF",
+    "Fan: ON",
+    "Fan++",
+    "Fan--",
+    "Temp++",
+    "Temp--",
+    "Fan: OFF"
+};
+#endif
 
 static void proc_keyword_res(void *args) {
     QueueHandle_t q_intent = (QueueHandle_t) args;
@@ -41,6 +69,11 @@ static void proc_keyword_res(void *args) {
     while(1) {
         xQueueReceive(q_intent, &id, portMAX_DELAY);
         led_indicate_busy();
+#if USE_SSD1306_DISPLAY
+        if (id < sizeof(asr_lut)/sizeof(char *)) {
+            ssd1306_display_ascii_to_bitmap(asr_lut[id]);
+        }
+#endif
 
         host_status = rtos_gpio_port_in(gpio_ctx_t0, p_in_host_status);
 
@@ -81,6 +114,9 @@ static void proc_keyword_res(void *args) {
 
 int32_t intent_handler_create(uint32_t priority, void *args)
 {
+#if USE_SSD1306_DISPLAY
+    ssd1306_display_create((configMAX_PRIORITIES / 2 - 1), appconfINTENT_RESET_DELAY_MS - 1000);
+#endif
     xTaskCreate((TaskFunction_t)proc_keyword_res,
                 "proc_keyword_res",
                 RTOS_THREAD_STACK_SIZE(proc_keyword_res),
