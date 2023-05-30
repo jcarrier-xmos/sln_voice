@@ -49,6 +49,14 @@ static const uint32_t bits_to_clear_on_exit = 0xFFFFFFFFUL;
 
 static TaskHandle_t ctx_power_control_task = NULL;
 
+#define TEST_PAD_12_ENABLED 0
+
+#if TEST_PAD_12_ENABLED
+rtos_gpio_port_id_t test_port = 0;
+uint32_t test_port_val = 0;
+#endif
+
+
 #if ON_TILE(POWER_CONTROL_TILE_NO)
 
 static power_state_t power_state = POWER_STATE_FULL;
@@ -163,6 +171,10 @@ static low_power_response_t low_power_response(void)
         POWER_STATE_FULL;
 
     if (power_state == POWER_STATE_LOW) {
+#if TEST_PAD_12_ENABLED
+        test_port_val &= ~(1 << 3);
+        rtos_gpio_port_out(gpio_ctx_t1, test_port, test_port_val);
+#endif
         power_state_set(POWER_STATE_LOW);
         driver_control_lock();
     }
@@ -268,6 +280,11 @@ static void full_power(void)
     configASSERT(notif_value == TASK_NOTIF_MASK_LP_EXIT);
     requested_power_state = POWER_STATE_FULL;
 
+#if TEST_PAD_12_ENABLED
+    test_port_val |= (1 << 3);
+    rtos_gpio_port_out(gpio_ctx_t1, test_port, test_port_val);
+#endif
+
     debug_printf("Exiting low power...\n");
 
     low_power_clocks_disable();
@@ -320,6 +337,16 @@ static void power_control_task(void *arg)
 {
     unsigned run = 1;
     power_control_state_t state = PWR_CTRL_STATE_LOW_POWER_REQUEST;
+
+#if ON_TILE(1)
+#if TEST_PAD_12_ENABLED
+    test_port = rtos_gpio_port(PORT_TEST_PAD_12);
+    rtos_gpio_port_enable(gpio_ctx_t1, test_port);
+    test_port_val = rtos_gpio_port_in(gpio_ctx_t1, test_port);
+    test_port_val &= ~(1 << 3);
+    rtos_gpio_port_out(gpio_ctx_t1, test_port, test_port_val);
+#endif
+#endif
 
 #if DEBUG_LOW_POWER_TASK
     debug_printf("Starting power_control_task() on tile %d\n", THIS_XCORE_TILE);
