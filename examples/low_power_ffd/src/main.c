@@ -33,6 +33,8 @@
 #include "power/power_control.h"
 #include "power/low_power_audio_buffer.h"
 
+#define RUNTIME_STATS_ENABLED 0
+
 #ifndef MEM_ANALYSIS_ENABLED
 #define MEM_ANALYSIS_ENABLED 0
 #endif
@@ -163,12 +165,26 @@ void vApplicationMallocFailedHook(void)
     for(;;);
 }
 
-#if MEM_ANALYSIS_ENABLED
+#if MEM_ANALYSIS_ENABLED || RUNTIME_STATS_ENABLED
 static void mem_analysis(void)
 {
+#if RUNTIME_STATS_ENABLED
+    char debug_string[2000];
+#endif
+
     for (;;) {
+#if MEM_ANALYSIS_ENABLED
         rtos_printf("Tile[%d]:\n\tMinimum heap free: %d\n\tCurrent heap free: %d\n", THIS_XCORE_TILE, xPortGetMinimumEverFreeHeapSize(), xPortGetFreeHeapSize());
+#endif
         vTaskDelay(pdMS_TO_TICKS(5000));
+#if RUNTIME_STATS_ENABLED
+        memset(debug_string, 0x00, 2000);
+        vTaskGetRunTimeStats(debug_string);
+        rtos_printf(
+                "-----> Tile[%d] <-----\n"
+                "%s\n"
+                "---------------------\n", THIS_XCORE_TILE, debug_string);
+#endif
     }
 }
 #endif
